@@ -1,0 +1,15 @@
+# Use jpf-test extension
+@using = jpf-test
+
+# Target class to verify
+target = TestMath
+
+# CRITICAL: Put model classes on BOOT classpath to override java.lang.Math
+vm.boot_classpath = ${jpf-test}/build/jpf-test-classes.jar
+
+# Show class loading activity
+log.info = jpf.classfile.load
+
+# Verify model class loading
+vm.tree_output = true
+report.console.property_violation = error,trace

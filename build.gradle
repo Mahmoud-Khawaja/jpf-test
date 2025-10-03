@@ -1,0 +1,84 @@
+plugins {
+    id 'java'
+}
+
+group = 'gov.nasa'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+def jpfCoreHome = System.getProperty("user.home") + "/Downloads/nas/jpf-core"
+
+dependencies {
+    implementation files("${jpfCoreHome}/build/jpf.jar")
+    implementation files("${jpfCoreHome}/build/jpf-annotations.jar")
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java', 'src/peers']
+        }
+    }
+
+    classes {
+        java {
+            srcDirs = ['src/classes']
+        }
+    }
+
+    examples {
+        java {
+            srcDirs = ['src/examples']
+        }
+    }
+}
+
+tasks.register('compileClasses', JavaCompile) {
+    source = sourceSets.classes.java
+    classpath = files()
+    destinationDirectory = file("${buildDir}/classes")
+    options.compilerArgs = ['-proc:none']
+}
+
+tasks.register('compileExamples', JavaCompile) {
+    source = sourceSets.examples.java
+    classpath = files()
+    destinationDirectory = file("${buildDir}/examples")
+    dependsOn compileClasses
+}
+
+tasks.register('createJpfTestJar', Jar) {
+    archiveFileName = 'jpf-test.jar'
+    destinationDirectory = file("${buildDir}")
+    from sourceSets.main.output
+}
+
+tasks.register('createJpfTestClassesJar', Jar) {
+    archiveFileName = 'jpf-test-classes.jar'
+    destinationDirectory = file("${buildDir}")
+    from "${buildDir}/classes"
+    dependsOn compileClasses
+}
+
+tasks.register('createExamplesJar', Jar) {
+    archiveFileName = 'jpf-test-examples.jar'
+    destinationDirectory = file("${buildDir}")
+    from "${buildDir}/examples"
+    dependsOn compileExamples
+}
+
+tasks.register('buildJars') {
+    group = 'JPF Build'
+    description = 'Builds all JPF test extension JARs'
+    dependsOn createJpfTestJar
+    dependsOn createJpfTestClassesJar
+    dependsOn createExamplesJar
+}
+
+build.dependsOn buildJars
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
