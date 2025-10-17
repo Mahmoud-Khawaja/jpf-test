@@ -1,2 +1,0 @@
-gov/nasa/jpf/vm/JPF_java_lang_Math.java
- gov.nasa.jpf.vm.JPF_java_lang_Math

@@ -25,7 +25,7 @@ sourceSets {
 
     classes {
         java {
-            srcDirs = ['src/classes']
+            srcDirs = ['src/classes/modules']
         }
     }
 
@@ -36,18 +36,30 @@ sourceSets {
     }
 }
 
+// Compile model classes with --patch-module
 tasks.register('compileClasses', JavaCompile) {
-    source = sourceSets.classes.java
+    source = fileTree(dir: 'src/classes/modules')
     classpath = files()
-    destinationDirectory = file("${buildDir}/classes")
-    options.compilerArgs = ['-proc:none']
+    destinationDirectory = file("${buildDir}/classes/modules")
+
+    sourceCompatibility = '11'
+    targetCompatibility = '11'
+
+    options.compilerArgs = [
+            '--module-source-path', file('src/classes/modules').absolutePath,
+            '--add-reads', 'java.base=ALL-UNNAMED',
+            '--patch-module', "java.base=" + file('src/classes/modules/java.base').absolutePath
+    ]
 }
 
 tasks.register('compileExamples', JavaCompile) {
     source = sourceSets.examples.java
-    classpath = files()
+    classpath = files("${buildDir}/classes/modules")
     destinationDirectory = file("${buildDir}/examples")
     dependsOn compileClasses
+
+    sourceCompatibility = '11'
+    targetCompatibility = '11'
 }
 
 tasks.register('createJpfTestJar', Jar) {
@@ -56,11 +68,19 @@ tasks.register('createJpfTestJar', Jar) {
     from sourceSets.main.output
 }
 
+// Remove module prefix when creating jar
 tasks.register('createJpfTestClassesJar', Jar) {
     archiveFileName = 'jpf-test-classes.jar'
     destinationDirectory = file("${buildDir}")
-    from "${buildDir}/classes"
     dependsOn compileClasses
+
+    // Extract classes from each module subdirectory, removing the module prefix
+    from(fileTree("${buildDir}/classes/modules/java.base")) {
+        include '**/*.class'
+    }
+    from(fileTree("${buildDir}/classes/modules/java.logging")) {
+        include '**/*.class'
+    }
 }
 
 tasks.register('createExamplesJar', Jar) {
@@ -80,5 +100,5 @@ tasks.register('buildJars') {
 
 build.dependsOn buildJars
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
