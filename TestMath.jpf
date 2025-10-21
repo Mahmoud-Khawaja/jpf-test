@@ -1,19 +1,8 @@
-# Use jpf-test extension
 @using = jpf-test
 
-# Target class to verify
 target = TestMath
 
-model classes on BOOT classpath
-vm.boot_classpath = ${jpf-test}/build/jpf-test-classes.jar
+classpath = ${jpf-test}/build/jpf-test-examples.jar
 
-# Enable ALL class loading logs
-log.info = class
-log.fine = class
-
-# Show what's being loaded
-vm.show_steps = true
-
-# Verify model class loading
+#log.info = class
 vm.tree_output = true
-report.console.property_violation = error,trace
