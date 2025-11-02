@@ -23,6 +23,12 @@ sourceSets {
         }
     }
 
+    classes {
+        java {
+            srcDirs = ['src/classes/modules']
+        }
+    }
+
     examples {
         java {
             srcDirs = ['src/examples']
@@ -30,10 +36,27 @@ sourceSets {
     }
 }
 
+// compile model classes with --patch-module
+tasks.register('compileClasses', JavaCompile) {
+    source = fileTree(dir: 'src/classes/modules')
+    classpath = files()
+    destinationDirectory = file("${buildDir}/classes/modules")
+    
+    sourceCompatibility = '11'
+    targetCompatibility = '11'
+    
+    options.compilerArgs = [
+            '--module-source-path', file('src/classes/modules').absolutePath,
+            '--add-reads', 'java.base=ALL-UNNAMED',
+            '--patch-module', "java.base=" + file('src/classes/modules/java.base').absolutePath
+    ]
+}
+
 tasks.register('compileExamples', JavaCompile) {
     source = sourceSets.examples.java
     classpath = files()
     destinationDirectory = file("${buildDir}/examples")
+    dependsOn compileClasses
 
     sourceCompatibility = '11'
     targetCompatibility = '11'
@@ -43,6 +66,18 @@ tasks.register('createJpfTestJar', Jar) {
     archiveFileName = 'jpf-test.jar'
     destinationDirectory = file("${buildDir}")
     from sourceSets.main.output
+}
+
+// jar with model classes (String)
+tasks.register('createJpfTestClassesJar', Jar) {
+    archiveFileName = 'jpf-test-classes.jar'
+    destinationDirectory = file("${buildDir}")
+    dependsOn compileClasses
+    
+    //  module prefix (java.base/)
+    from("${buildDir}/classes/modules") {
+        include '**/*.class'
+    }
 }
 
 tasks.register('createExamplesJar', Jar) {
@@ -56,6 +91,7 @@ tasks.register('buildJars') {
     group = 'JPF Build'
     description = 'Builds all JPF test extension JARs'
     dependsOn createJpfTestJar
+    dependsOn createJpfTestClassesJar
     dependsOn createExamplesJar
 }
 
