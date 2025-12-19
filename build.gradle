@@ -9,7 +9,9 @@ repositories {
     mavenCentral()
 }
 
-def jpfCoreHome = System.getProperty("user.home") + "/Downloads/nas/jpf-core"
+def jpfCoreHome = file('../jpf-core').exists() ?
+    file('../jpf-core').absolutePath : 
+    System.getProperty("user.home") + "/Downloads/nas/jpf-core"
 
 dependencies {
     implementation files("${jpfCoreHome}/build/jpf.jar")
@@ -36,7 +38,6 @@ sourceSets {
     }
 }
 
-// compile model classes with --patch-module
 tasks.register('compileClasses', JavaCompile) {
     source = fileTree(dir: 'src/classes/modules')
     classpath = files()
@@ -46,9 +47,9 @@ tasks.register('compileClasses', JavaCompile) {
     targetCompatibility = '11'
     
     options.compilerArgs = [
-            '--module-source-path', file('src/classes/modules').absolutePath,
-            '--add-reads', 'java.base=ALL-UNNAMED',
-            '--patch-module', "java.base=" + file('src/classes/modules/java.base').absolutePath
+        '--module-source-path', file('src/classes/modules').absolutePath,
+        '--add-reads', 'java.base=ALL-UNNAMED',
+        '--patch-module', "java.base=" + file('src/classes/modules/java.base').absolutePath
     ]
 }
 
@@ -68,14 +69,20 @@ tasks.register('createJpfTestJar', Jar) {
     from sourceSets.main.output
 }
 
-// jar with model classes (String)
+// JAR with model classes - matches jpf-core structure
 tasks.register('createJpfTestClassesJar', Jar) {
     archiveFileName = 'jpf-test-classes.jar'
     destinationDirectory = file("${buildDir}")
     dependsOn compileClasses
     
-    //  module prefix (java.base/)
+    // modules/java.base/...
     from("${buildDir}/classes/modules") {
+        into 'modules'
+        include '**/*.class'
+    }
+    //java.base/...
+    from("${buildDir}/classes/modules") {
+        into ''
         include '**/*.class'
     }
 }
@@ -90,9 +97,7 @@ tasks.register('createExamplesJar', Jar) {
 tasks.register('buildJars') {
     group = 'JPF Build'
     description = 'Builds all JPF test extension JARs'
-    dependsOn createJpfTestJar
-    dependsOn createJpfTestClassesJar
-    dependsOn createExamplesJar
+    dependsOn createJpfTestJar, createJpfTestClassesJar, createExamplesJar
 }
 
 build.dependsOn buildJars
