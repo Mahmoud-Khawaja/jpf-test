@@ -9,9 +9,14 @@ repositories {
     mavenCentral()
 }
 
-def jpfCoreHome = file('../jpf-core').exists() ?
-    file('../jpf-core').absolutePath : 
-    System.getProperty("user.home") + "/Downloads/nas/jpf-core"
+def siteProps = new Properties()
+def siteFile = file("${System.getProperty('user.home')}/.jpf/site.properties")
+if (siteFile.exists()) {
+    siteProps.load(siteFile.newDataInputStream())
+}
+
+def jpfCoreHome = siteProps.getProperty('jpf-core', '../jpf-core')
+println "Using jpf-core at: ${jpfCoreHome}"
 
 dependencies {
     implementation files("${jpfCoreHome}/build/jpf.jar")
@@ -42,14 +47,14 @@ tasks.register('compileClasses', JavaCompile) {
     source = fileTree(dir: 'src/classes/modules')
     classpath = files()
     destinationDirectory = file("${buildDir}/classes/modules")
-    
+
     sourceCompatibility = '11'
     targetCompatibility = '11'
-    
+
     options.compilerArgs = [
-        '--module-source-path', file('src/classes/modules').absolutePath,
-        '--add-reads', 'java.base=ALL-UNNAMED',
-        '--patch-module', "java.base=" + file('src/classes/modules/java.base').absolutePath
+            '--module-source-path', file('src/classes/modules').absolutePath,
+            '--add-reads', 'java.base=ALL-UNNAMED',
+            '--patch-module', "java.base=" + file('src/classes/modules/java.base').absolutePath
     ]
 }
 
@@ -74,7 +79,7 @@ tasks.register('createJpfTestClassesJar', Jar) {
     archiveFileName = 'jpf-test-classes.jar'
     destinationDirectory = file("${buildDir}")
     dependsOn compileClasses
-    
+
     // modules/java.base/...
     from("${buildDir}/classes/modules") {
         into 'modules'

@@ -2,9 +2,4 @@
 
 target = TestString
 
-vm.boot_classpath = ${jpf-test}/build/jpf-test-classes.jar;${jpf-core}/build/jpf-classes.jar
-
 classpath = ${jpf-test}/build/jpf-test-examples.jar
-
-log.info = class
-vm.tree_output = true

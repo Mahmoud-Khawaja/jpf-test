@@ -3,6 +3,3 @@
 target = TestMath
 
 classpath = ${jpf-test}/build/jpf-test-examples.jar
-
-#log.info = class
-vm.tree_output = true
